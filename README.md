@@ -1,113 +1,117 @@
 # Super Claude Fetch
 
-A local MCP server that gives Claude the ability to access **any** website — even JavaScript-heavy SPAs, anti-bot pages, and dynamic web apps that regular HTTP fetch simply cannot handle.
+[English](README_EN.md)
 
-Built with [Playwright](https://playwright.dev/) headless browser + [MCP (Model Context Protocol)](https://modelcontextprotocol.io/).
+一个本地 MCP 服务器，让 Claude 拥有**无头浏览器**能力 —— 能访问任何 JavaScript 渲染的网站，包括 SPA 应用、反爬页面和动态 Web App。
 
-## The Problem
+普通 HTTP fetch 搞不定的，它来搞定。
 
-Claude's built-in `WebFetch` uses plain HTTP requests. This works fine for static pages, but **completely fails** on modern web apps:
+基于 [Playwright](https://playwright.dev/) + [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) 构建。
 
-| Website | HTTP Fetch | Super Claude Fetch |
-|---------|-----------|-------------------|
-| **Hyperliquid DEX** | `Hyperliquid` (11 chars, just a title) | Full trading UI with live prices, order book, 24h volume (1499 chars) |
-| **Lighter DEX** | `Lighter` (7 chars) | Complete page structure with market data, trading pairs (880 chars) |
-| **Twitter/X** | `JavaScript is not available` (error page) | Full tweet content, author, timestamps, engagement metrics (610 chars) |
-| **Xiaohongshu** | Blank or login wall | Post title, author, full text content, engagement stats |
+## 为什么需要这个？
 
-**Why?** Most modern sites are SPAs (Single Page Applications) that render content with JavaScript. A plain HTTP GET only returns an empty HTML shell.
+Claude 内置的 `WebFetch` 走的是普通 HTTP 请求。静态页面没问题，但现代 Web 应用**全靠 JS 渲染**，HTTP 拿到的就是个空壳：
 
-## Tools
+| 网站 | 普通 HTTP Fetch | Super Claude Fetch |
+|------|----------------|-------------------|
+| **Hyperliquid** | `Hyperliquid`（11 字符，只有标题） | 完整交易界面：实时价格、盘口、24h 成交量（1499 字符） |
+| **Lighter DEX** | `Lighter`（7 字符） | 完整页面结构、交易对、市场数据（880 字符） |
+| **Twitter/X** | `JavaScript is not available`（报错页） | 推文原文、作者、时间戳、互动数据（610 字符） |
+| **小红书** | 空白或登录墙 | 帖子标题、作者、正文内容、点赞收藏数 |
 
-| Tool | Description |
-|------|-------------|
-| `fetch` | Navigate to a URL, render JavaScript, return page text. The primary tool. |
-| `screenshot` | Take a PNG screenshot of any page. |
-| `execute` | Run custom JavaScript on a page + optionally intercept API responses. |
+## 三个工具
 
-## Setup
+| 工具 | 用途 |
+|------|------|
+| `fetch` | 打开网页，等 JS 渲染完，返回页面文本。主力工具。 |
+| `screenshot` | 对任意网页截图，返回 PNG。 |
+| `execute` | 在页面上执行自定义 JS + 可选拦截 API 响应。进阶玩法。 |
 
-### Prerequisites
+## 安装
+
+### 依赖
 
 ```bash
 pip install playwright mcp
 playwright install chromium
 ```
 
-### Configure Claude Desktop
+### 配置 Claude Desktop
 
-Add to `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
+编辑配置文件：
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "playwright-fetch": {
       "command": "python",
-      "args": ["C:\\path\\to\\server.py"]
+      "args": ["你的路径/server.py"]
     }
   }
 }
 ```
 
-Restart Claude Desktop. The tools will appear automatically.
+重启 Claude Desktop，工具自动出现。
 
-### Configure Claude Code
+### 配置 Claude Code
 
-Add to your Claude Code MCP settings:
+在 MCP 设置中添加：
 
 ```json
 {
   "playwright-fetch": {
     "command": "python",
-    "args": ["C:\\path\\to\\server.py"],
+    "args": ["你的路径/server.py"],
     "type": "stdio"
   }
 }
 ```
 
-## How It Works
+## 工作原理
 
-1. **Lazy browser init** — A Chromium instance starts on first use and stays alive for subsequent calls. No cold start penalty after the first request.
-2. **Smart wait** — Instead of a fixed delay, the server polls the page until meaningful content appears (or 15s max). This handles fast sites quickly while giving slow SPAs enough time.
-3. **Page isolation** — Each request gets a fresh browser context. No cookie/state leakage between calls.
-4. **Auto-fallback instructions** — The MCP server tells Claude to use it automatically when regular fetch returns empty or useless content. No manual prompting needed.
+1. **懒加载浏览器** — 首次调用时启动 Chromium，之后复用，无重复冷启动。
+2. **智能等待** — 轮询页面直到出现有意义的内容（或最多 15 秒），快站秒返，慢站耐心等。
+3. **页面隔离** — 每次请求独立 context，无 cookie/状态泄漏。
+4. **自动降级** — MCP instructions 告诉 Claude：普通 fetch 拿不到内容时，自动切换到这个工具，不需要用户手动提醒。
 
-## Examples
+## 用法示例
 
-### Basic fetch
+### 基础抓取
 ```
-User: "What's trading on Hyperliquid right now?"
-Claude: [uses playwright-fetch.fetch] → gets full trading page with live prices
+用户："Hyperliquid 上现在交易什么？"
+Claude：[自动调用 playwright-fetch.fetch] → 拿到完整交易页面和实时价格
 ```
 
-### API interception
+### API 拦截
 ```python
-# Intercept DeFi API responses while loading a page
+# 加载页面的同时拦截 DeFi 后端 API 响应
 execute(
     url="https://app.lighter.xyz/trade/",
     script="() => document.title",
     intercept_pattern="zklighter.elliot.ai/api"
 )
-# Returns: orderBookDetails, candles, assetDetails, etc.
+# 返回：orderBookDetails, candles, assetDetails 等原始数据
 ```
 
-### Screenshot
+### 截图
 ```python
 screenshot(url="https://app.hyperliquid.xyz/trade/")
-# Returns: base64 PNG of the rendered page
+# 返回：base64 编码的 PNG 截图
 ```
 
-## Performance
+## 性能对比
 
-| Metric | HTTP Fetch | Super Claude Fetch |
-|--------|-----------|-------------------|
-| Speed | ~0.5-1s | ~3-5s |
-| JS rendering | No | Yes |
-| SPA support | No | Yes |
-| Anti-bot bypass | No | Yes |
-| API interception | No | Yes |
+| 指标 | HTTP Fetch | Super Claude Fetch |
+|------|-----------|-------------------|
+| 速度 | ~0.5-1s | ~3-5s |
+| JS 渲染 | 不支持 | 支持 |
+| SPA 应用 | 不支持 | 支持 |
+| 反爬绕过 | 不支持 | 支持 |
+| API 拦截 | 不支持 | 支持 |
 
-The 3-5s overhead is the cost of running a real browser. For sites where HTTP fetch works fine, keep using it. This tool shines exactly where HTTP fetch fails.
+3-5 秒的开销是跑真实浏览器的代价。HTTP fetch 能搞定的站不需要用这个，**这个工具专治 HTTP fetch 搞不定的站**。
 
 ## License
 
