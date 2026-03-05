@@ -36,6 +36,40 @@ pip install playwright mcp
 playwright install chromium
 ```
 
+### 安装为 Agent Skill（纯 Skill 方式，可选）
+
+当前仓库已包含可直接使用的 skill 目录：
+
+- `skills/super-claude-fetch/`
+
+可安装到 Codex Skills 目录：
+
+```bash
+mkdir -p "$CODEX_HOME/skills"
+cp -R ./skills/super-claude-fetch "$CODEX_HOME/skills/super-claude-fetch"
+```
+
+也可安装到 Claude Skills 目录：
+
+```bash
+mkdir -p "$HOME/.claude/skills"
+cp -R ./skills/super-claude-fetch "$HOME/.claude/skills/super-claude-fetch"
+```
+
+然后在对话中显式调用：
+
+```text
+用 $super-claude-fetch 抓取这个 JS 页面内容：https://example.com
+```
+
+Skill 内部会直接调用：
+
+- `scripts/pw_ops.py fetch`
+- `scripts/pw_ops.py screenshot`
+- `scripts/pw_ops.py execute`
+
+无需配置 MCP server。
+
 ### 配置 Claude Desktop
 
 编辑配置文件：
