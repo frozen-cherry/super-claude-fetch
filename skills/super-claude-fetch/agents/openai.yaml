@@ -1,0 +1,7 @@
+interface:
+  display_name: "Super Claude Fetch"
+  short_description: "Render dynamic pages via pure Playwright skill."
+  default_prompt: "Use $super-claude-fetch to fetch, screenshot, or extract data from a JavaScript-rendered page without MCP."
+
+policy:
+  allow_implicit_invocation: true
