@@ -36,17 +36,24 @@ pip install playwright mcp
 playwright install chromium
 ```
 
-### Install as an Agent Skill (Recommended, pure Skill mode)
+### Install as an Agent Skill (Optional pure Skill mode)
 
 This repo now includes a ready-to-use skill folder:
 
 - `skills/super-claude-fetch/`
 
-Copy it into your `$CODEX_HOME/skills/` directory:
+Install to Codex skills directory:
 
 ```bash
 mkdir -p "$CODEX_HOME/skills"
 cp -R ./skills/super-claude-fetch "$CODEX_HOME/skills/super-claude-fetch"
+```
+
+Or install to Claude skills directory:
+
+```bash
+mkdir -p "$HOME/.claude/skills"
+cp -R ./skills/super-claude-fetch "$HOME/.claude/skills/super-claude-fetch"
 ```
 
 Then invoke it explicitly in chat:
