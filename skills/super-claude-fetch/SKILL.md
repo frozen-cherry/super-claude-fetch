@@ -118,8 +118,8 @@ Treat this as a high-privilege local skill.
 ## Repository Map
 
 - `scripts/pw_ops.py`: Pure Playwright CLI for `fetch/screenshot/execute`
-- `server.py`: Legacy MCP version (optional/compat mode)
-- `browser.py`: shared browser helper (legacy MCP path)
+- `server.py`: MCP server (fetch/screenshot/execute tools)
+- `browser.py`: shared browser lifecycle manager
 - `comparison_test.py`: HTTP vs Playwright comparison utility
 - `lighter_test.py`: target-site exploratory scraper example
 
